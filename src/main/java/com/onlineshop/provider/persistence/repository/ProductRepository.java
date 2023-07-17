@@ -21,7 +21,7 @@ public interface ProductRepository extends PagingAndSortingRepository<Product, L
                 SELECT new com.onlineshop.provider.persistence.repository.dto.ProductStatisticsDto(
                 p.id ,p.name, p.visible, p.commentable, p.votable, AVG(v.score)) FROM Product p
                 join Vote v on p.id = v.product.id
-                where v.accepted = true 
+                where v.confirmationStatus = 'CONFIRMED' 
                 group by p.id ,p.name, p.visible, p.commentable, p.votable
                 order by p.id
                 """)

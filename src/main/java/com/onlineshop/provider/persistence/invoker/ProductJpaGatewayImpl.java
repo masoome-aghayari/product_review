@@ -13,12 +13,14 @@ import com.onlineshop.provider.persistence.repository.CommentRepository;
 import com.onlineshop.provider.persistence.repository.ProductRepository;
 import com.onlineshop.provider.persistence.repository.dto.CommentDto;
 import com.onlineshop.provider.persistence.repository.dto.ProductStatisticsDto;
+import com.onlineshop.provider.persistence.repository.enums.ConfirmationStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -30,20 +32,25 @@ public class ProductJpaGatewayImpl implements ProductGateway {
 
     @Override
     public PageableStatistics<ProductStatistics> getProductsStatistics(int offset, int length) {
-        int page = (offset / length);
+        PageableStatistics<ProductStatistics> returnValue = new PageableStatistics<>(Collections.emptyList(), false);
+        int page =(int) Math.ceil((double)offset / length);
         Pageable pageable = PageRequest.of(page, length);
         Page<ProductStatisticsDto> productsStatisticsPage = productRepository.getProductsStatistics(pageable);
         List<ProductStatisticsDto> productsStatisticsList = productsStatisticsPage.getContent();
         setLatestCommentsOnProducts(productsStatisticsList);
-        setTotalNumberOfCommentsOnProducts(productsStatisticsList);
-        List<ProductStatistics> productsStatisticModels = mapper.toProductStatisticsModelList(productsStatisticsList);
-        boolean hasNextPage = productsStatisticsPage.getTotalPages() > page + 1;
-        return new PageableStatistics<>(productsStatisticModels, hasNextPage);
+        if (!productsStatisticsList.isEmpty()) {
+            setTotalNumberOfCommentsOnProducts(productsStatisticsList);
+            List<ProductStatistics> productsStatisticModels = mapper.toProductStatisticsModelList(productsStatisticsList);
+            boolean hasNextPage = productsStatisticsPage.getTotalPages() > page + 1;
+            returnValue = new PageableStatistics<>(productsStatisticModels, hasNextPage);
+        }
+        return returnValue;
     }
 
     private void setTotalNumberOfCommentsOnProducts(List<ProductStatisticsDto> productsStatisticsList) {
         productsStatisticsList.forEach(p ->
-                p.setTotalNumberOfComments(commentRepository.countCommentByAcceptedIsTrueAndProductId(p.getProductId())));
+                p.setTotalNumberOfComments(commentRepository.countCommentsByConfirmationStatus(p.getProductId(),
+                        ConfirmationStatus.CONFIRMED)));
     }
 
     private void setLatestCommentsOnProducts(List<ProductStatisticsDto> productsStatisticsList) {
@@ -51,6 +58,7 @@ public class ProductJpaGatewayImpl implements ProductGateway {
     }
 
     public List<CommentDto> getProductLatestComments(Long productId) {
-        return commentRepository.getLatestCommentsForProduct(productId, PageRequest.of(0, 3)).getContent();
+        return commentRepository.getLatestCommentsForProduct(productId, ConfirmationStatus.CONFIRMED,
+                PageRequest.of(0, 3)).getContent();
     }
 }

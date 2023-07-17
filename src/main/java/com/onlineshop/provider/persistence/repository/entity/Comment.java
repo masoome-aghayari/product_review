@@ -5,6 +5,7 @@ package com.onlineshop.provider.persistence.repository.entity;
  * @since 7/13/23
  */
 
+import com.onlineshop.provider.persistence.repository.enums.ConfirmationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,9 +34,11 @@ public class Comment {
     @Column(columnDefinition = "NVARCHAR(255)")
     private String text;
 
-    boolean accepted;
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "CONFIRMATION_STATUS")
+    private ConfirmationStatus confirmationStatus;
 
     @CreationTimestamp
     @Column(name = "COMMENT_DATE")
-    Date commentDate;
+    private Date commentDate;
 }

@@ -41,6 +41,4 @@ public class Product {
 
     @Enumerated
     Votable votable;
-
-
 }
